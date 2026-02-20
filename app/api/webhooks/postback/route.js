@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { fakeDatabase } from '../../../lib/db';
+import { Redis } from '@upstash/redis';
+
+const redis = Redis.fromEnv();
 
 // Example Postback URL:
 // https://yourdomain.com/api/webhooks/postback?s1={user_email}&status=1&payout=2.50
@@ -14,8 +16,8 @@ export async function GET(request) {
         return NextResponse.json({ error: 'No s1 (email) parameter provided' }, { status: 400 });
     }
 
-    // Mark the user as successfully verified in our database
-    fakeDatabase.set(userEmail, true);
+    // Mark the user as successfully verified in Redis with a 24-hour expiration
+    await redis.set(`verified:${userEmail}`, true, { ex: 86400 });
 
     console.log('✅ Postback received! Unlocked user: ' + userEmail);
 
@@ -33,7 +35,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'No user ID provided' }, { status: 400 });
         }
 
-        fakeDatabase.set(userEmail, true);
+        await redis.set(`verified:${userEmail}`, true, { ex: 86400 });
         console.log('✅ Postback received! Unlocked user: ' + userEmail);
 
         return new NextResponse('OK', { status: 200 });

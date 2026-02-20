@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { fakeDatabase } from '../../../lib/db';
+import { Redis } from '@upstash/redis';
+
+// Initialize Redis client. It automatically picks up UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN from environment variables.
+const redis = Redis.fromEnv();
 
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
@@ -9,9 +12,8 @@ export async function GET(request) {
         return NextResponse.json({ error: 'Missing email parameter' }, { status: 400 });
     }
 
-    // Check the fake in-memory database
-    // In a real app, query your database/Redis for this user's locker status
-    const isCompleted = fakeDatabase.get(email) === true;
+    // Check the Redis database for this user's locker status
+    const isCompleted = await redis.get(`verified:${email}`) === true;
 
     return NextResponse.json({
         completed: isCompleted,
