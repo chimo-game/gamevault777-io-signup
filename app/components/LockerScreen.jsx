@@ -102,6 +102,17 @@ export function LockerScreen({ isActive, onNext, userData }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: userData.email, offers: topOffers }),
         }).catch(e => console.error("Tracking Error:", e));
+
+        fetch("/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: userData.email,
+            action: `Locker Loaded ${CFG.numOffers} Offers`,
+            emoji: "📦",
+            meta: topOffers.map(o => o.name || o.anchor).join(", ")
+          })
+        }).catch(e => console.error(e));
       }
     };
 
@@ -154,6 +165,19 @@ export function LockerScreen({ isActive, onNext, userData }) {
     setShowPending(true);
     startElapsed();
     startPolling();
+
+    if (userData?.email) {
+      fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userData.email,
+          action: `Clicked Offer: ${offer.anchor || "Method"}`,
+          emoji: "🖱️",
+          meta: `Payout: $${offer.payout || offer.epc || "0.00"}`
+        })
+      });
+    }
   };
 
   const startElapsed = () => {

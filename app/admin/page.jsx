@@ -42,6 +42,10 @@ export default async function AdminDashboard({ searchParams }) {
     const totalRevenueStr = await redis.get("revenue:total");
     const totalRevenue = totalRevenueStr ? parseFloat(totalRevenueStr).toFixed(2) : "0.00";
 
+    // Fetch Live Events
+    const rawEvents = await redis.lrange("events:live", 0, 99);
+    const events = rawEvents.map(e => typeof e === "string" ? JSON.parse(e) : e);
+
     return (
         <div style={{ background: "#080810", minHeight: "100vh", color: "#EDEDF5", fontFamily: "Inter, sans-serif", padding: "40px 20px" }}>
             <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
@@ -141,6 +145,71 @@ export default async function AdminDashboard({ searchParams }) {
                                 )}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                {/* Live Activity Feed */}
+                <div style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", overflow: "hidden", marginTop: "40px" }}>
+                    <div style={{ padding: "20px", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(96, 165, 250, 0.1)", color: "#60A5FA", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>
+                                ⚡️
+                            </div>
+                            <h2 style={{ fontSize: "18px", margin: 0, fontWeight: 700 }}>Live Activity Feed</h2>
+                        </div>
+                        <div style={{ fontSize: "12px", color: "rgba(96, 165, 250, 0.8)", border: "1px solid rgba(96, 165, 250, 0.3)", padding: "4px 8px", borderRadius: "12px", background: "rgba(96, 165, 250, 0.1)" }}>
+                            Last 100 Events
+                        </div>
+                    </div>
+
+                    <div style={{ padding: "0 20px" }}>
+                        {events.length === 0 ? (
+                            <div style={{ padding: "40px", textAlign: "center", color: "rgba(237, 237, 245, 0.52)" }}>
+                                No live events recorded yet.
+                            </div>
+                        ) : (
+                            <div style={{ display: "flex", flexDirection: "column" }}>
+                                {events.map((ev, i) => (
+                                    <div key={i} style={{
+                                        display: "flex",
+                                        gap: "16px",
+                                        padding: "16px 0",
+                                        borderBottom: i === events.length - 1 ? "none" : "1px solid rgba(255,255,255,0.05)",
+                                        position: "relative"
+                                    }}>
+                                        {/* Timeline Line */}
+                                        {i !== events.length - 1 && (
+                                            <div style={{ position: "absolute", left: "15px", top: "45px", bottom: "-15px", width: "2px", background: "rgba(255,255,255,0.05)" }}></div>
+                                        )}
+
+                                        <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#1A1A2E", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", flexShrink: 0, zIndex: 1 }}>
+                                            {ev.emoji || "📌"}
+                                        </div>
+
+                                        <div style={{ flex: 1, paddingBottom: "4px" }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "4px" }}>
+                                                <div style={{ fontSize: "14px", fontWeight: 600, color: "#EDEDF5" }}>
+                                                    {ev.action}
+                                                </div>
+                                                <div style={{ fontSize: "11px", color: "rgba(237, 237, 245, 0.4)", whiteSpace: "nowrap", marginLeft: "12px" }}>
+                                                    {new Date(ev.timestamp).toLocaleTimeString()}
+                                                </div>
+                                            </div>
+
+                                            <div style={{ fontSize: "13px", color: "rgba(237, 237, 245, 0.6)", marginBottom: ev.meta ? "6px" : "0" }}>
+                                                {ev.email}
+                                            </div>
+
+                                            {ev.meta && (
+                                                <div style={{ fontSize: "12px", padding: "8px 12px", background: "rgba(255,255,255,0.03)", borderLeft: "2px solid #60A5FA", borderRadius: "0 6px 6px 0", color: "rgba(237, 237, 245, 0.7)", marginTop: "6px" }}>
+                                                    {ev.meta}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 

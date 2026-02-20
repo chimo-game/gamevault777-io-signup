@@ -85,6 +85,17 @@ export function SignupScreen({ isActive, onNext, setUserData }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(signupData),
       });
+
+      // Fire Live Event
+      fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: signupData.email,
+          action: `Account Created (${signupData.country})`,
+          emoji: "✨"
+        })
+      });
     } catch (e) {
       console.error(e);
     }
