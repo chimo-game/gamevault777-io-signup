@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
-const redis = Redis.fromEnv();
+// Initialize Redis client using the default keys Vercel automatically injects when you attach an Upstash DB
+const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN,
+});
 
 // Example Postback URL:
 // https://yourdomain.com/api/webhooks/postback?s1={user_email}&status=1&payout=2.50
