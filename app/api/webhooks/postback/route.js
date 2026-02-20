@@ -15,6 +15,9 @@ export async function GET(request) {
   // 's1' is commonly used by CPA networks (CPABuild, OGAds) as the sub ID passing the user identifier
   const userEmail = searchParams.get("s1");
   const status = searchParams.get("status"); // Optional: check if network explicitly sent success status
+  const payoutStr = searchParams.get("payout");
+  const payout = payoutStr ? parseFloat(payoutStr) : 0;
+  const offerName = searchParams.get("offer_name") || searchParams.get("offer_id") || "Offer";
 
   if (!userEmail) {
     return NextResponse.json(
@@ -32,7 +35,14 @@ export async function GET(request) {
     if (typeof profile === "string") profile = JSON.parse(profile);
     profile.verified = true;
     profile.verifiedAt = Date.now();
+    profile.payout = payout;
+    profile.completedOffer = offerName;
     await redis.set(`profile:${userEmail}`, JSON.stringify(profile), { ex: 604800 });
+  }
+
+  // Track global revenue
+  if (payout > 0) {
+    await redis.incrbyfloat("revenue:total", payout);
   }
 
   console.log("✅ Postback received! Unlocked user: " + userEmail);
@@ -46,6 +56,9 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const userEmail = body.s1 || body.sub_id;
+    const payoutStr = body.payout;
+    const payout = payoutStr ? parseFloat(payoutStr) : 0;
+    const offerName = body.offer_name || body.offer_id || "Offer";
 
     if (!userEmail) {
       return NextResponse.json(
@@ -61,7 +74,13 @@ export async function POST(request) {
       if (typeof profile === "string") profile = JSON.parse(profile);
       profile.verified = true;
       profile.verifiedAt = Date.now();
+      profile.payout = payout;
+      profile.completedOffer = offerName;
       await redis.set(`profile:${userEmail}`, JSON.stringify(profile), { ex: 604800 });
+    }
+
+    if (payout > 0) {
+      await redis.incrbyfloat("revenue:total", payout);
     }
 
     console.log("✅ Postback received! Unlocked user: " + userEmail);

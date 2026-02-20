@@ -43,9 +43,9 @@ export function LockerScreen({ isActive, onNext, userData }) {
     : "New Player";
   const displayEmail = userData?.email
     ? userData.email.split("@")[0][0] +
-      (userData.email.split("@")[0].length > 2 ? "***" : "") +
-      "@" +
-      userData.email.split("@")[1]
+    (userData.email.split("@")[0].length > 2 ? "***" : "") +
+    "@" +
+    userData.email.split("@")[1]
     : "••••@email.com";
 
   useEffect(() => {
@@ -91,8 +91,18 @@ export function LockerScreen({ isActive, onNext, userData }) {
       clearTimeout(to);
       done = true;
       cleanup();
-      setOffers(data.slice(0, CFG.numOffers));
+      const topOffers = data.slice(0, CFG.numOffers);
+      setOffers(topOffers);
       setLoadingOffers(false);
+
+      // Track impressions
+      if (userData?.email) {
+        fetch("/api/offers/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userData.email, offers: topOffers }),
+        }).catch(e => console.error("Tracking Error:", e));
+      }
     };
 
     tag.onerror = () => {
@@ -182,7 +192,7 @@ export function LockerScreen({ isActive, onNext, userData }) {
     try {
       const res = await fetch(
         "/api/locker/status?email=" +
-          encodeURIComponent(userData?.email || "test"),
+        encodeURIComponent(userData?.email || "test"),
       );
       if (!res.ok) throw new Error("poll failed");
       return await res.json();

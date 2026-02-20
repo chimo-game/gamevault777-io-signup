@@ -39,6 +39,8 @@ export default async function AdminDashboard({ searchParams }) {
     const verifiedCount = users.filter((u) => u.verified).length;
     const pendingCount = total - verifiedCount;
     const convRate = total > 0 ? ((verifiedCount / total) * 100).toFixed(1) : "0.0";
+    const totalRevenueStr = await redis.get("revenue:total");
+    const totalRevenue = totalRevenueStr ? parseFloat(totalRevenueStr).toFixed(2) : "0.00";
 
     return (
         <div style={{ background: "#080810", minHeight: "100vh", color: "#EDEDF5", fontFamily: "Inter, sans-serif", padding: "40px 20px" }}>
@@ -62,9 +64,9 @@ export default async function AdminDashboard({ searchParams }) {
 
                 {/* Top Metric Cards */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "40px" }}>
+                    <Card title="Total Earned" value={`$${totalRevenue}`} color="#F43F5E" />
                     <Card title="Total Signups" value={total} color="#60A5FA" />
                     <Card title="Verified Users" value={verifiedCount} color="#22C55E" />
-                    <Card title="Pending Verifications" value={pendingCount} color="#F5B800" />
                     <Card title="Conversion Rate" value={`${convRate}%`} color="#A78BFA" />
                 </div>
 
@@ -82,9 +84,9 @@ export default async function AdminDashboard({ searchParams }) {
                             <thead style={{ background: "#141422", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                                 <tr>
                                     <Th>Player</Th>
-                                    <Th>Email</Th>
+                                    <Th>Email & Offer</Th>
                                     <Th>Joined</Th>
-                                    <Th>Status</Th>
+                                    <Th>Status & Payout</Th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -108,16 +110,26 @@ export default async function AdminDashboard({ searchParams }) {
                                                 </div>
                                             </Td>
                                             <Td style={{ color: "rgba(237, 237, 245, 0.52)", fontSize: "14px" }}>
-                                                {user.email}
+                                                <div style={{ marginBottom: "6px" }}>{user.email}</div>
+                                                <div style={{ fontSize: "11px", color: "rgba(237, 237, 245, 0.3)", maxWidth: "200px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                    {user.completedOffer ? `Completed: ${user.completedOffer}` : "No offer recorded"}
+                                                </div>
                                             </Td>
                                             <Td style={{ color: "rgba(237, 237, 245, 0.52)", fontSize: "12px" }}>
                                                 {new Date(user.timestamp).toLocaleString()}
                                             </Td>
                                             <Td>
                                                 {user.verified ? (
-                                                    <span style={{ background: "rgba(34, 197, 94, 0.1)", color: "#22C55E", border: "1px solid rgba(34, 197, 94, 0.2)", padding: "4px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>
-                                                        ✓ Verified
-                                                    </span>
+                                                    <div>
+                                                        <span style={{ background: "rgba(34, 197, 94, 0.1)", color: "#22C55E", border: "1px solid rgba(34, 197, 94, 0.2)", padding: "4px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", display: "inline-block", marginBottom: "6px" }}>
+                                                            ✓ Verified
+                                                        </span>
+                                                        {user.payout > 0 && (
+                                                            <div style={{ fontSize: "12px", color: "#F43F5E", fontWeight: 700, marginLeft: "4px" }}>
+                                                                + ${parseFloat(user.payout).toFixed(2)}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <span style={{ background: "rgba(245, 184, 0, 0.1)", color: "#F5B800", border: "1px solid rgba(245, 184, 0, 0.2)", padding: "4px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>
                                                         ⏳ Pending
